@@ -51,7 +51,7 @@
 #define TEST_MAZE_GEN 0
 
 /* Set to 1 to remove all walls as a debugging aid. (Nate Taylor, S07). */
-#define GOD_MODE 1
+#define GOD_MODE 0
 
 /* local functions--see function headers for details */
 static int mark_maze_area(int x, int y);
