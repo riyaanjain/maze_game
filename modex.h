@@ -49,12 +49,15 @@
  * Y_DIM   is a vertical screen dimension in pixels.
  */
 #define IMAGE_X_DIM     320   /* pixels; must be divisible by 4             */
-#define IMAGE_Y_DIM     200   /* pixels                                     */
+#define IMAGE_Y_DIM     182   /* pixels                                     */ /*subtract status bar y_dim so bottom wall not hidden*/
 #define IMAGE_X_WIDTH   (IMAGE_X_DIM / 4)          /* addresses (bytes)     */
 #define SCROLL_X_DIM    IMAGE_X_DIM                /* full image width      */
 #define SCROLL_Y_DIM    IMAGE_Y_DIM                /* full image width      */
 #define SCROLL_X_WIDTH  (IMAGE_X_DIM / 4)          /* addresses (bytes)     */
 
+#define STATUS_X_DIM    320     /* pixels; must be divisible by 4 */
+#define STATUS_Y_DIM    18      /* pixels*/
+#define STATUS_X_WIDTH  (STATUS_X_DIM / 4) /*80 pixels*/
 /*
  * NOTES
  *
@@ -135,5 +138,16 @@ extern int draw_horiz_line(int y);
 
 /* draw a vertical line at horizontal pixel x within the logical view window */
 extern int draw_vert_line(int x);
+
+/*Show status bar on video display*/
+extern void show_status_bar(int level, int time, int fruits);
+
+/*Saves the block at pos_x, pos_y.  
+* Mask any portion of the block not inside the logical view window.*/
+void save_block(int pos_x, int pos_y, unsigned char* blk);
+
+/* Draw masked BLOCK_X_DIM x BLOCK_Y_DIM block at absolute coordinates.  
+* Mask any portion of the block not inside the logical view window.*/
+void draw_mask_block(int pos_x, int pos_y, unsigned char* blk, unsigned char* mask);
 
 #endif /* MODEX_H */

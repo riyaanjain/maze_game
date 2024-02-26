@@ -59,6 +59,8 @@
 #define RIGHT     67
 #define LEFT      68
 
+#define MASK_SIZE 144   /*mask constant*/
+
 /*
  * If NDEBUG is not defined, we execute sanity checks to make sure that
  * changes to enumerations, bit maps, etc., have been made consistently.
@@ -394,6 +396,7 @@ static void *rtc_thread(void *arg) {
     int open[NUM_DIRS];
     int need_redraw = 0;
     int goto_next_level = 0;
+    unsigned char block_buffer[MASK_SIZE]; /*buffer of block being drawn, saves old one*/
 
     // Loop over levels until a level is lost or quit.
     for (level = 1; (level <= MAX_LEVEL) && (quit_flag == 0); level++) {
@@ -419,9 +422,16 @@ static void *rtc_thread(void *arg) {
 
         // Show maze around the player's original position
         (void)unveil_around_player(play_x, play_y);
+        int time;       /*init var to find time*/
+        time = total/32;              /*32 ticks in a second*/
+        int fruit;     /*init var for number of fruits*/
+        fruit = ret_n_fruits();      /*invokes getter*/
 
-        draw_full_block(play_x, play_y, get_player_block(last_dir));
+        save_block(play_x, play_y, block_buffer); /*saves background*/
+        draw_mask_block(play_x, play_y, get_player_block(last_dir), get_player_mask(last_dir)); /*draws masked block*/
         show_screen();
+        show_status_bar(level,time,fruit);  /*shows status bar*/
+        draw_full_block(play_x,play_y, block_buffer);    /*draws block*/
 
         // get first Periodic Interrupt
         ret = read(fd, &data, sizeof(unsigned long));
@@ -429,7 +439,7 @@ static void *rtc_thread(void *arg) {
         while ((quit_flag == 0) && (goto_next_level == 0)) {
             // Wait for Periodic Interrupt
             ret = read(fd, &data, sizeof(unsigned long));
-        
+            
             // Update tick to keep track of time.  If we missed some
             // interrupts we want to update the player multiple times so
             // that player velocity is smooth
@@ -474,6 +484,7 @@ static void *rtc_thread(void *arg) {
                     // squares and check whether the player has won the level.
                     if (unveil_around_player(play_x, play_y)) {
                         pthread_mutex_unlock(&mtx);
+                        total=0; /*reset timer per level*/
                         goto_next_level = 1;
                         break;
                     }
@@ -522,12 +533,21 @@ static void *rtc_thread(void *arg) {
                             move_left(&play_x);  
                             break;
                     }
-                    draw_full_block(play_x, play_y, get_player_block(last_dir));    
+                    save_block(play_x, play_y, block_buffer);   /*saves background*/
+                    draw_mask_block(play_x, play_y, get_player_block(last_dir), get_player_mask(last_dir));   /*draws mask*/
+                    show_screen();
+                    draw_full_block(play_x,play_y, block_buffer);    /*draws full block*/
                     need_redraw = 1;
                 }
             }
             if (need_redraw)
-                show_screen();    
+                fruit = ret_n_fruits();     /*for status bar*/
+                time = total/32;
+                save_block(play_x, play_y, block_buffer);   /*saves*/
+                draw_mask_block(play_x, play_y, get_player_block(last_dir), get_player_mask(last_dir));   /*draws*/
+                show_screen();
+                show_status_bar(level,time,fruit); /*shows status bar when need redraw*/
+                draw_full_block(play_x, play_y, block_buffer);   /*draws full block*/
             need_redraw = 0;
         }    
     }

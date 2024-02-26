@@ -38,6 +38,8 @@
 
 #include "text.h"
 
+#define STATUS_SCREEN_SIZE  STATUS_X_DIM*STATUS_Y_DIM /* 320*18=5760 */
+
 /* 
  * These font data were read out of video memory during text mode and
  * saved here.  They could be read in the same manner at the start of a
@@ -561,3 +563,47 @@ unsigned char font_data[256][16] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 };
+
+/*
+ * string_to_buffer
+ *   DESCRIPTION: image to graphics helper function which converts the string into buffer that holds
+ *                the graphical representation of the ASCII characters.
+ *   INPUTS: const char *string – string to be written into buffer
+ *           colour_text – colour of the text required
+ *           *buffer – buffer to hold char data
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: buffer with graphical representation of ASCII characters
+ */
+
+void string_to_buffer(unsigned char *buffer, unsigned char colour_text, const char *string, int level){
+  unsigned int str_len = strlen(string);    /*input string length*/
+  unsigned char level_colours[10];          /*10 levels of colour*/
+  int centre_offset, mask, char_index;
+  unsigned char *char_ptr;            /*character pointer in data*/
+  unsigned int i,char_pos,row,col;    /*index declaration for loops*/
+
+  for(i=0; i<10; i++){                /*set level colours*/
+    level_colours[i]=i;
+  }
+  memset(buffer,level_colours[level],STATUS_SCREEN_SIZE);   /*set colour for each level in buffer*/
+
+  centre_offset=(STATUS_X_DIM-(str_len*FONT_WIDTH))/2;               /*formula to centre*/
+
+  for(char_pos=0; char_pos<str_len; char_pos++){        /*iterate through string*/
+    char_index=(int)string[char_pos];                   /*index in font data, then point to that*/
+    char_ptr=font_data[char_index];
+    for(row=0; row<FONT_HEIGHT; row++){
+      mask=0x80;      /*if value is 1 for col in row then write*/
+      for(col=0; col<FONT_WIDTH; col++){
+        int plane=col%4;
+        int buffer_index=(centre_offset+col+(char_pos*FONT_WIDTH))/4;   /*find buffer index*/
+        buffer_index+=(row*(STATUS_X_DIM/4))+(plane*1440);              
+        if(char_ptr[row] & mask){       /*colour of text for current bit check*/
+          buffer[buffer_index]=colour_text;
+        }
+        mask >>= 1;
+      }
+    }
+  }
+}
