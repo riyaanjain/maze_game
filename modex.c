@@ -672,7 +672,7 @@ void draw_mask_block(int pos_x, int pos_y, unsigned char* blk, unsigned char* ma
     /* Draw the clipped image. */
     for (dy = 0; dy < y_bottom; dy++, pos_y++) {        
         for (dx = 0; dx < x_right; dx++, pos_x++, blk++)
-            if (mask[dx+(dy*BLOCK_X_DIM)]==1){      /*draw when mask 1, 12 wide character*/
+            if (mask[dx+(dy*BLOCK_X_DIM)]==1){      /*draw when mask 1, character is 12 pixels wide*/
                 *(img3 + (pos_x >> 2) + pos_y * SCROLL_X_WIDTH +
                 (3 - (pos_x & 3)) * SCROLL_SIZE) = *blk;
             }
