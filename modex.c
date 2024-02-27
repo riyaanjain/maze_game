@@ -665,14 +665,14 @@ void draw_mask_block(int pos_x, int pos_y, unsigned char* blk, unsigned char* ma
      */
     pos_y += y_top;
     blk += y_top * BLOCK_X_DIM;
-    mask += y_top * BLOCK_X_DIM ; 
+    mask += y_top * BLOCK_X_DIM; 
     /* Adjust y_bottom to hold the number of pixel rows to be drawn. */
     y_bottom -= y_top;
 
     /* Draw the clipped image. */
     for (dy = 0; dy < y_bottom; dy++, pos_y++) {        
         for (dx = 0; dx < x_right; dx++, pos_x++, blk++)
-            if (mask[dx+(dy*BLOCK_X_DIM)]==1){      /*draw when mask 1, character is 12 pixels wide*/
+            if (mask[dx+(dy*BLOCK_X_DIM)]==1){      /*draw when mask 1, character is 12 pixels*/
                 *(img3 + (pos_x >> 2) + pos_y * SCROLL_X_WIDTH +
                 (3 - (pos_x & 3)) * SCROLL_SIZE) = *blk;
             }
