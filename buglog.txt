@@ -1,0 +1,17 @@
+MP2 buglog
+ 
+Empty black bar for status bar, had to make changes to mazegame.c.
+ 
+For loop initial declaration outside c99 mode, cannot declare variables inside for loop.
+ 
+Bottom wall behind status bar, subtracted 18 (status_y_dim) from image_y_dim.
+ 
+The timer didn’t reset per level, had to set total to 0 when goto_next_level is active.
+ 
+Timer was moving too fast, created new variable time that divided the ticks by 32 to give the time in seconds instead of the faster rate of rtc ticks.
+ 
+String to buffer wrote a block of the text colour because buffer was 1440 pixels. Fixed by iterating through buffer pixel by pixel, recreating buffer of 5760 pixels because of 4 planes. 
+ 
+Text was not printing properly, was distorted. Fixed show_status_bar, copy_status_bar function to add loop index and multiply by 1440 for planar offset.
+ 
+Wasn’t masking properly, had to account for character being 12 pixels wide in draw_mask_block and had to create a save_mask function that stores the buffer in the image data
