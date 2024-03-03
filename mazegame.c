@@ -576,7 +576,7 @@ static void *rtc_thread(void *arg) {
 
                 save_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);   /*saves*/
                 draw_mask_block(play_x,play_y,get_player_block(last_dir),get_player_mask(last_dir));   /*draws*/
-                show_screen();  /**/
+                //show_screen();  /**/
                 show_status_bar(level,timer,fruit); /**/
 
                 //draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);
