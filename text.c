@@ -611,11 +611,7 @@ void string_to_buffer(unsigned char *buffer, unsigned char colour_text, const ch
 
 /**/
 void transparent_buffer(unsigned char *buffer, const char *string){
-  unsigned int str_len=strlen(string);
-  unsigned int str_idx;
-  unsigned int row;
-  unsigned int col;
-  unsigned int buf_pos;
+  unsigned int str_len=strlen(string), str_idx,row,col,buf_pos;
   
   for(str_idx=0; str_idx<str_len; str_idx++){
     int char_idx=(int)string[str_idx];

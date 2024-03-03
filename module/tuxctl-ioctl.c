@@ -26,6 +26,16 @@
 #include "tuxctl-ioctl.h"
 #include "mtcp.h"
 
+//global variables
+static unsigned char arr[2];	/**/
+static unsigned int ack=1;	/**/
+static unsigned int spam;
+static unsigned int led;
+
+int tuxctl_init(struct tty_struct *tty);
+int tuxctl_set_led(struct tty_struct *tty, unsigned long argument);
+int tuxctl_buttons(struct tty_struct *tty, (unsigned long *)argument);
+
 #define debug(str, ...) \
 	printk(KERN_DEBUG "%s: " str, __FUNCTION__, ## __VA_ARGS__)
 
@@ -45,7 +55,18 @@ void tuxctl_handle_packet (struct tty_struct* tty, unsigned char* packet)
     c = packet[2];
 
 	switch(a){
-		case 
+		case MTCP_BIOC_EVENT:
+			arr[0]=b;
+			arr[1]=c;
+			break;
+		case MTCP_ACK:
+			ack=1;
+			spam=0;
+			break;
+		case MTCP_RESET:
+			tuxctl_init(tty);
+			tuxctl_set_led(tty,led);
+			break;
 	}
 
     /*printk("packet : %x %x %x\n", a, b, c); */
@@ -70,13 +91,20 @@ tuxctl_ioctl (struct tty_struct* tty, struct file* file,
 {
     switch (cmd) {
 	case TUX_INIT:
+		return tuxctl_init(tty);		//should ret 0
 	case TUX_BUTTONS:
+		return tuxctl_buttons(tty,(unsigned long*)argument);	//ret 0 or -EINVAL if pointer to arg not valid
 	case TUX_SET_LED:
+		return tuxctl_set_led(tty,argument);	//ret 0
 	case TUX_LED_ACK:
+		return -EINVAL;
 	case TUX_LED_REQUEST:
+		return -EINVAL;
 	case TUX_READ_LED:
+		return -EINVAL;
 	default:
 	    return -EINVAL;
     }
 }
 
+int tuxctl_init(struct tty_struct *tty){}
