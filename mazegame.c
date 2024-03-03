@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include <time.h>   /**/
 
 #include "blocks.h"
 #include "maze.h"
@@ -557,7 +556,7 @@ static void *rtc_thread(void *arg) {
                         case DIR_RIGHT: 
                             move_right(&play_x); 
                             break;
-                        case DIR_DOWN:  
+                        case DIR_DOWN:
                             move_down(&play_y);  
                             break;
                         case DIR_LEFT:  
@@ -571,7 +570,7 @@ static void *rtc_thread(void *arg) {
                     need_redraw = 1;
                 }
             }
-            //if (need_redraw)  /**/ //uncommenting this makes the text appear in one place
+            if (need_redraw)  /**/ //uncommenting this makes the text appear in one place
                 fruit=ret_n_fruits();     /*for status bar*/
                 timer=total/32;
 

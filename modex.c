@@ -1210,7 +1210,7 @@ void set_palette_colours(unsigned char palette, unsigned char red, unsigned char
 
 /**/
 void floating_text(int draw_save, int fruit_type, int play_x, int play_y){
-    static unsigned char *old_buffer = NULL;
+    static unsigned char old_buffer[13*FONT_WIDTH*FONT_HEIGHT];     //max size
     static int string_width=0, centred_x=0, centred_y=0, string_height=0;
     char *string;
 
@@ -1221,8 +1221,7 @@ void floating_text(int draw_save, int fruit_type, int play_x, int play_y){
         string = fruit_texts[fruit_type-1];
         string_width=FONT_WIDTH*strlen(string);
         string_height=FONT_HEIGHT;
-        old_buffer = malloc(string_width*string_height);
-        unsigned char *new_buffer = malloc(string_width*string_height);
+        unsigned char new_buffer[string_width*string_height];
         centred_x = play_x+(BLOCK_X_DIM-string_width)/2;
         centred_y = (play_y-1-(2*BLOCK_Y_DIM))>BLOCK_Y_DIM ? (play_y-1-(2*BLOCK_Y_DIM)) : BLOCK_Y_DIM;
         save_block(centred_x,centred_y,old_buffer,string_width,string_height);
@@ -1232,12 +1231,10 @@ void floating_text(int draw_save, int fruit_type, int play_x, int play_y){
         }
         transparent_buffer(new_buffer,string);
         draw_full_block(centred_x,centred_y,new_buffer,string_width,string_height);
-        //free(new_buffer);
     }
     else{
         if(old_buffer){
             draw_full_block(centred_x,centred_y,old_buffer,string_width,string_height);
-            //free(old_buffer);
         }
         string_width=0,string_height=0,centred_x=0,centred_y=0;
     }

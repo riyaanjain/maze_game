@@ -59,7 +59,8 @@
 #define STATUS_Y_DIM    18      /* pixels*/
 #define STATUS_X_WIDTH  (STATUS_X_DIM / 4) /*80 pixels*/
 
-#define TRANSPARENCY_OFFSET     0x40     /**/ //transparency offset is 64
+//#define TRANSPARENCY_OFFSET     0x40     /**/ //transparency offset is 64
+
 /*
  * NOTES
  *

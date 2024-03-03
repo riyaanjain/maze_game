@@ -60,6 +60,8 @@
 
 /* stores original terminal settings */
 static struct termios tio_orig;
+int fd; /**/
+static int tux_button_tester;   /**/
 
 /* 
  * init_input
@@ -170,6 +172,55 @@ cmd_t get_command(dir_t cur_dir) {
 #endif
     }
 
+    if(USE_TUX_CONTROLLER == 1) /**/ //tux button test
+        {   
+        switch(tux_button_testerbutton_tester)
+        {
+            case 0x80: //right
+                pushed = DIR_RIGHT;
+                break;
+
+            case 0x40: //left
+                pushed  = DIR_LEFT;
+                break;
+            case 0x20: //down
+                pushed = DIR_DOWN;
+                break;
+
+            case 0x10: // up
+                pushed = DIR_UP;
+                break;
+
+            case 0x08: //c
+                pushed = DIR_STOP;
+                prev_cur = DIR_STOP;
+                printf(" you pushed the C button\n");
+                break;
+
+            case 0x04: //b
+                pushed = DIR_STOP;
+                prev_cur = DIR_STOP;
+                printf(" you pushed the B button\n");
+                break;
+
+            case 0x02: //a
+                pushed = DIR_STOP;
+                prev_cur = DIR_STOP;
+                printf(" you pushed the A button\n");
+                break;
+
+            case 0x01: //start
+                pushed = DIR_STOP;
+                prev_cur = DIR_STOP;
+                printf(" you pushed the S button\n");
+                break;
+
+            default: 
+                pushed = DIR_STOP;
+                break;
+        }
+    }
+
     /*
      * Once a direction is pushed, that command remains active
      * until a turn is taken.
@@ -227,7 +278,16 @@ int main() {
         return 3;
     }
 
+    fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY); /**/
+    int ldisc num = N_MOUSE;
+    ioctl(fd, TIOCSETD, &ldisc num);
+
     init_input();
+
+    ioctl(fd, TUX_INIT);    /**/
+    ioctl(fd, TUX_SET_LED, 0xF7F7FFFF);
+    ioctl(fd, TUX_BUTTONS, &tux_button_tester);
+
     while (1) {
         printf("CURRENT DIRECTION IS %s\n", dir_names[dir]);
         while ((cmd = get_command(dir)) == TURN_NONE);

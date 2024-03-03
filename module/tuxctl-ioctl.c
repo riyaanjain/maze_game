@@ -44,6 +44,10 @@ void tuxctl_handle_packet (struct tty_struct* tty, unsigned char* packet)
     b = packet[1]; /* values when printing them. */
     c = packet[2];
 
+	switch(a){
+		case 
+	}
+
     /*printk("packet : %x %x %x\n", a, b, c); */
 }
 
