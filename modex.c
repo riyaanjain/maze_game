@@ -554,22 +554,23 @@ void clear_screens() {
  *   RETURN VALUE: none
  *   SIDE EFFECTS: draws into the build buffer
  */
-void draw_full_block(int pos_x, int pos_y, unsigned char* blk) {
+/**/
+void draw_full_block(int pos_x, int pos_y, unsigned char* blk, int x_dim, int y_dim) {
     int dx, dy;          /* loop indices for x and y traversal of block */
     int x_left, x_right; /* clipping limits in horizontal dimension     */
     int y_top, y_bottom; /* clipping limits in vertical dimension       */
 
     /* If block is completely off-screen, we do nothing. */
-    if (pos_x + BLOCK_X_DIM <= show_x || pos_x >= show_x + SCROLL_X_DIM ||
-        pos_y + BLOCK_Y_DIM <= show_y || pos_y >= show_y + SCROLL_Y_DIM)
+    if (pos_x + x_dim <= show_x || pos_x >= show_x + SCROLL_X_DIM ||
+        pos_y + y_dim <= show_y || pos_y >= show_y + SCROLL_Y_DIM)
         return;
 
     /* Clip any pixels falling off the left side of screen. */
     if ((x_left = show_x - pos_x) < 0)
         x_left = 0;
     /* Clip any pixels falling off the right side of screen. */
-    if ((x_right = show_x + SCROLL_X_DIM - pos_x) > BLOCK_X_DIM)
-        x_right = BLOCK_X_DIM;
+    if ((x_right = show_x + SCROLL_X_DIM - pos_x) > x_dim)
+        x_right = x_dim;
     /* Skip the first x_left pixels in both screen position and block data. */
     pos_x += x_left;
     blk += x_left;
@@ -581,20 +582,20 @@ void draw_full_block(int pos_x, int pos_y, unsigned char* blk) {
      * clip).
      */
     x_right -= x_left;
-    x_left = BLOCK_X_DIM - x_right;
+    x_left = x_dim - x_right;
 
     /* Clip any pixels falling off the top of the screen. */
     if ((y_top = show_y - pos_y) < 0)
         y_top = 0;
     /* Clip any pixels falling off the bottom of the screen. */
-    if ((y_bottom = show_y + SCROLL_Y_DIM - pos_y) > BLOCK_Y_DIM)
-        y_bottom = BLOCK_Y_DIM;
+    if ((y_bottom = show_y + SCROLL_Y_DIM - pos_y) > y_dim)
+        y_bottom = y_dim;
     /*
      * Skip the first y_left pixel in screen position and the first
      * y_left rows of pixels in the block data.
      */
     pos_y += y_top;
-    blk += y_top * BLOCK_X_DIM;
+    blk += y_top * x_dim;
     /* Adjust y_bottom to hold the number of pixel rows to be drawn. */
     y_bottom -= y_top;
 
@@ -692,23 +693,23 @@ void draw_mask_block(int pos_x, int pos_y, unsigned char* blk, unsigned char* ma
  *   RETURN VALUE: none
  *   SIDE EFFECTS: draws into the build buffer
  */
-
-void save_block(int pos_x, int pos_y, unsigned char* blk) {
+/**/
+void save_block(int pos_x, int pos_y, unsigned char* blk, int x_dim, int y_dim) {
     int dx, dy;          /* loop indices for x and y traversal of block */
     int x_left, x_right; /* clipping limits in horizontal dimension     */
     int y_top, y_bottom; /* clipping limits in vertical dimension       */
 
     /* If block is completely off-screen, we do nothing. */
-    if (pos_x + BLOCK_X_DIM <= show_x || pos_x >= show_x + SCROLL_X_DIM ||
-        pos_y + BLOCK_Y_DIM <= show_y || pos_y >= show_y + SCROLL_Y_DIM)
+    if (pos_x + x_dim <= show_x || pos_x >= show_x + SCROLL_X_DIM ||
+        pos_y + y_dim <= show_y || pos_y >= show_y + SCROLL_Y_DIM)
         return;
 
     /* Clip any pixels falling off the left side of screen. */
     if ((x_left = show_x - pos_x) < 0)
         x_left = 0;
     /* Clip any pixels falling off the right side of screen. */
-    if ((x_right = show_x + SCROLL_X_DIM - pos_x) > BLOCK_X_DIM)
-        x_right = BLOCK_X_DIM;
+    if ((x_right = show_x + SCROLL_X_DIM - pos_x) > x_dim)
+        x_right = x_dim;
     /* Skip the first x_left pixels in both screen position and block data. */
     pos_x += x_left;
     blk += x_left;
@@ -720,20 +721,20 @@ void save_block(int pos_x, int pos_y, unsigned char* blk) {
      * clip).
      */
     x_right -= x_left;
-    x_left = BLOCK_X_DIM - x_right;
+    x_left = x_dim - x_right;
 
     /* Clip any pixels falling off the top of the screen. */
     if ((y_top = show_y - pos_y) < 0)
         y_top = 0;
     /* Clip any pixels falling off the bottom of the screen. */
-    if ((y_bottom = show_y + SCROLL_Y_DIM - pos_y) > BLOCK_Y_DIM)
-        y_bottom = BLOCK_Y_DIM;
+    if ((y_bottom = show_y + SCROLL_Y_DIM - pos_y) > y_dim)
+        y_bottom = y_dim;
     /*
      * Skip the first y_left pixel in screen position and the first
      * y_left rows of pixels in the block data.
      */
     pos_y += y_top;
-    blk += y_top * BLOCK_X_DIM;
+    blk += y_top * x_dim;
     /* Adjust y_bottom to hold the number of pixel rows to be drawn. */
     y_bottom -= y_top;
 
@@ -1199,6 +1200,45 @@ void show_status_bar(int level, int time, int fruit){
     }
 }
 
+/**/
+void set_palette_colours(unsigned char palette, unsigned char red, unsigned char green, unsigned char blue){
+    OUTB(0x3C8, palette); //target palette
+    OUTB(0x3C9, red);
+    OUTB(0x3C9, green);
+    OUTB(0x3C9, blue);
+}
+
+/**/
+void floating_text(int draw_save, int fruit_type, int play_x, int play_y){
+    static unsigned char old_buffer[13*FONT_WIDTH*FONT_HEIGHT];     //max size
+    static int string_width=0, centred_x=0, centred_y=0, string_height=0;
+    char *string;
+
+    char *fruit_texts[NUM_FRUIT_TYPES]={
+        "an apple!", "grapes!", "a peach!", "a strawberry!", "a banana!", "watermelon!", "a DEW!"};
+
+    if(draw_save){  //draw = 1
+        string = fruit_texts[fruit_type-1];
+        string_width=FONT_WIDTH*strlen(string);
+        string_height=FONT_HEIGHT;
+        unsigned char new_buffer[string_width*string_height];
+        centred_x = play_x+(BLOCK_X_DIM-string_width)/2;
+        centred_y = (play_y-1-(2*BLOCK_Y_DIM))>BLOCK_Y_DIM ? (play_y-1-(2*BLOCK_Y_DIM)) : BLOCK_Y_DIM;
+        save_block(centred_x,centred_y,old_buffer,string_width,string_height);
+        unsigned int i;
+        for(i=0; i<string_width*string_height; i++){
+            new_buffer[i]=old_buffer[i];
+        }
+        transparent_buffer(new_buffer,string);
+        draw_full_block(centred_x,centred_y,new_buffer,string_width,string_height);
+    }
+    else{
+        if(old_buffer){
+            draw_full_block(centred_x,centred_y,old_buffer,string_width,string_height);
+        }
+        string_width=0,string_height=0,centred_x=0,centred_y=0;
+    }
+}
 
 #ifdef TEXT_RESTORE_PROGRAM
 

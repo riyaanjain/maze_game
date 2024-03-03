@@ -61,6 +61,9 @@
 
 #define MASK_SIZE 144   /*mask constant*/
 
+int fruit_time;     /**/
+int fruit_type;  /**/
+
 /*
  * If NDEBUG is not defined, we execute sanity checks to make sure that
  * changes to enumerations, bit maps, etc., have been made consistently.
@@ -104,6 +107,7 @@ static void move_left(int* xpos);
 static int unveil_around_player(int play_x, int play_y);
 static void *rtc_thread(void *arg);
 static void *keyboard_thread(void *arg);
+static void player_colour_changer(); /**/
 
 /* 
  * prepare_maze_level
@@ -265,13 +269,16 @@ static void move_left(int* xpos) {
  *                 consumed fruit, and maze exit; consumes fruit and
  *                 updates displayed fruit counts
  */
-static int unveil_around_player(int play_x, int play_y) {
+static int unveil_around_player(int play_x, int play_y) {    /**/
     int x = play_x / BLOCK_X_DIM; /* player's maze lattice position */
     int y = play_y / BLOCK_Y_DIM;
     int i, j;            /* loop indices for unveiling maze squares */
 
     /* Check for fruit at the player's position. */
-    (void)check_for_fruit (x, y);
+    fruit_type=check_for_fruit (x, y);  /**/
+    if(fruit_type!=0){     /**/
+        fruit_time=96;        /*3 seconds, 96 ticks*/
+    }
 
     /* Unveil spaces around the player. */
     for (i = -1; i < 2; i++)
@@ -398,8 +405,25 @@ static void *rtc_thread(void *arg) {
     int goto_next_level = 0;
     unsigned char block_buffer[MASK_SIZE]; /*buffer of block being drawn, saves old one*/
 
+    /**/ //wall colours for the levels
+    unsigned char wall_colours[10][3]={
+    {0xDC, 0x14, 0x3C},
+    {0x02, 0xBF, 0xAF},
+    {0xFF, 0xD7, 0x00},
+    {0x94, 0x00, 0xD3},
+    {0x32, 0xCD, 0x32},
+    {0xFF, 0x63, 0x47},
+    {0x1E, 0x90, 0xFF},
+    {0xBA, 0x55, 0xD3},
+    {0x00, 0xFF, 0xFF},
+    {0xFF, 0x45, 0x00}
+    };
+
     // Loop over levels until a level is lost or quit.
     for (level = 1; (level <= MAX_LEVEL) && (quit_flag == 0); level++) {
+
+        set_palette_colours(WALL_FILL_COLOR,wall_colours[level-1][0],wall_colours[level-1][1],wall_colours[level-1][2]); /**/
+
         // Prepare for the level.  If we fail, just let the player win.
         if (prepare_maze_level(level) != 0)
             break;
@@ -421,17 +445,19 @@ static void *rtc_thread(void *arg) {
         next_dir = DIR_STOP;
 
         // Show maze around the player's original position
-        (void)unveil_around_player(play_x, play_y);
-        int time;       /*init var to find time*/
-        time = total/32;              /*32 ticks in a second*/
+        (void)unveil_around_player(play_x, play_y);  /**/
+        int timer;       /*init var to find time*/
+        timer = total/32;              /*32 ticks in a second*/
         int fruit;     /*init var for number of fruits*/
         fruit = ret_n_fruits();      /*invokes getter*/
 
-        save_block(play_x, play_y, block_buffer); /*saves background*/
-        draw_mask_block(play_x, play_y, get_player_block(last_dir), get_player_mask(last_dir)); /*draws masked block*/
+        //int last_total=0;  /**/
+
+        save_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM); /*saves background*/
+        draw_mask_block(play_x,play_y,get_player_block(last_dir),get_player_mask(last_dir)); /*draws masked block*/
         show_screen();
-        show_status_bar(level,time,fruit);  /*shows status bar*/
-        draw_full_block(play_x,play_y, block_buffer);    /*draws block*/
+        show_status_bar(level,timer,fruit);  /*shows status bar*/
+        draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);    /*draws block*/
 
         // get first Periodic Interrupt
         ret = read(fd, &data, sizeof(unsigned long));
@@ -439,6 +465,8 @@ static void *rtc_thread(void *arg) {
         while ((quit_flag == 0) && (goto_next_level == 0)) {
             // Wait for Periodic Interrupt
             ret = read(fd, &data, sizeof(unsigned long));
+
+            //player_colour_changer(); /**/
             
             // Update tick to keep track of time.  If we missed some
             // interrupts we want to update the player multiple times so
@@ -446,6 +474,8 @@ static void *rtc_thread(void *arg) {
             ticks = data >> 8;    
 
             total += ticks;
+
+            player_colour_changer();    /**/
 
             // If the system is completely overwhelmed we better slow down:
             if (ticks > 8) ticks = 8;
@@ -526,28 +556,44 @@ static void *rtc_thread(void *arg) {
                         case DIR_RIGHT: 
                             move_right(&play_x); 
                             break;
-                        case DIR_DOWN:  
+                        case DIR_DOWN:
                             move_down(&play_y);  
                             break;
                         case DIR_LEFT:  
                             move_left(&play_x);  
                             break;
                     }
-                    save_block(play_x, play_y, block_buffer);   /*saves background*/
+                    save_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);   /*saves background*/
                     draw_mask_block(play_x, play_y, get_player_block(last_dir), get_player_mask(last_dir));   /*draws mask*/
                     show_screen();
-                    draw_full_block(play_x,play_y, block_buffer);    /*draws full block*/
+                    draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);    /*draws full block*/
                     need_redraw = 1;
                 }
             }
-            if (need_redraw)
-                fruit = ret_n_fruits();     /*for status bar*/
-                time = total/32;
-                save_block(play_x, play_y, block_buffer);   /*saves*/
-                draw_mask_block(play_x, play_y, get_player_block(last_dir), get_player_mask(last_dir));   /*draws*/
+            if (need_redraw)  /**/ //uncommenting this makes the text appear in one place
+                fruit=ret_n_fruits();     /*for status bar*/
+                timer=total/32;
+
+                save_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);   /*saves*/
+                draw_mask_block(play_x,play_y,get_player_block(last_dir),get_player_mask(last_dir));   /*draws*/
+                show_screen();  /**/
+                show_status_bar(level,timer,fruit); /**/
+
+                //draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);
+                
+                if(fruit_type!=0 && fruit_time>0){  /**/
+                    floating_text(1,fruit_type,play_x,play_y);
+                }
+
                 show_screen();
-                show_status_bar(level,time,fruit); /*shows status bar when need redraw*/
-                draw_full_block(play_x, play_y, block_buffer);   /*draws full block*/
+
+                if(fruit_type!=0 && fruit_time>=0){     /**/
+                    floating_text(0,fruit_type,play_x,play_y);
+                    fruit_time--;
+                }
+
+                draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);    /**/
+
             need_redraw = 0;
         }    
     }
@@ -555,6 +601,29 @@ static void *rtc_thread(void *arg) {
         winner = 1;
     
     return 0;
+}
+
+/**/
+static void player_colour_changer(){
+    static unsigned char colour[3]={0x3E,0x3E,0x3E}; //rgb init to 3E so that inital transition is smooth (range goes to 3F)
+    static int inc_dec=1; //1 increment, -1 decrement
+    static int rgb_picker=0; //r=0,g=1,b=2
+
+    if(colour[rgb_picker]==0x3F){       //if at end of 6 bit spectrum, switch to decrement
+        inc_dec=-1;
+    }else if(colour[rgb_picker]==0x00){     //if at start, increment
+        inc_dec=1;
+    }
+
+    colour[rgb_picker]+=inc_dec;
+
+    if ((colour[rgb_picker]==0x3F && inc_dec==1) || (colour[rgb_picker]==0 && inc_dec==-1)){     //check if colour has reached max or min of 6 bit range
+        rgb_picker = (rgb_picker+1)%3;                          //next colour
+        if (rgb_picker == 0) {
+            inc_dec = -inc_dec;                                 //change direction of increment if all colours cycled through
+        }
+    }
+    set_palette_colours(PLAYER_CENTER_COLOR,colour[0],colour[1],colour[2]);
 }
 
 /*

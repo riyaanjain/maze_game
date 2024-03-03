@@ -8,10 +8,24 @@ Bottom wall behind status bar, subtracted 18 (status_y_dim) from image_y_dim.
  
 The timer didn’t reset per level, had to set total to 0 when goto_next_level is active.
  
-Timer was moving too fast, created new variable time that divided the ticks by 32 to give the time in seconds instead of the faster rate of rtc ticks.
+Timer was moving too fast, created new variable time that divided the ticks by 32 to give the time in seconds 
+instead of the faster rate of rtc ticks.
  
-String to buffer wrote a block of the text colour because buffer was 1440 pixels. Fixed by iterating through buffer pixel by pixel, recreating buffer of 5760 pixels because of 4 planes. 
+String to buffer wrote a block of the text colour because buffer was 1440 pixels. Fixed by iterating through 
+buffer pixel by pixel, recreating buffer of 5760 pixels because of 4 planes. 
  
-Text was not printing properly, was distorted. Fixed show_status_bar, copy_status_bar function to add loop index and multiply by 1440 for planar offset.
+Text was not printing properly, was distorted. Fixed show_status_bar, copy_status_bar function to add loop index 
+and multiply by 1440 for planar offset.
  
-Wasn’t masking properly, had to account for character being 12 pixels wide in draw_mask_block and had to create a save_mask function that stores the buffer in the image data
+Wasn’t masking properly, had to account for character being 12 pixels wide in draw_mask_block and had to create 
+a save_mask function that stores the buffer in the image data
+
+For the gradient for changing player colour, the initial transition was from white to black and then it was smooth
+To fix this I set the starting values of the colours to 0x3E so that it goes the 0x3F next then starts at 0x00 again,
+making it smooth throughout.
+
+Prints floating fruit text and goes to next level instantly. Then started printing text but keeping on each frame
+not following the player around, following the player but staying on each position player moves. Was returning
+the fruit_time in unveil around player instead of just setting the value, this fixed jumping to next level but 
+the text was either not moving or moved and stayed in each frame. Needed to declare string_height as static variable
+to be stored, now string appears and follows player but for very short time.
