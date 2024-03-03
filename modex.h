@@ -58,6 +58,8 @@
 #define STATUS_X_DIM    320     /* pixels; must be divisible by 4 */
 #define STATUS_Y_DIM    18      /* pixels*/
 #define STATUS_X_WIDTH  (STATUS_X_DIM / 4) /*80 pixels*/
+
+#define TRANSPARENCY_OFFSET     0x40     /**/ //transparency offset is 64
 /*
  * NOTES
  *
@@ -131,7 +133,7 @@ extern void clear_screens();
  * (pos_x,pos_y); any part of the block outside of the logical view window
  * is clipped (cut off and not drawn)
  */
-extern void draw_full_block(int pos_x, int pos_y, unsigned char* blk);
+extern void draw_full_block(int pos_x, int pos_y, unsigned char* blk, int x_dim, int y_dim);
 
 /* draw a horizontal line at vertical pixel y within the logical view window */
 extern int draw_horiz_line(int y);
@@ -144,10 +146,13 @@ extern void show_status_bar(int level, int time, int fruits);
 
 /*Saves the block at pos_x, pos_y.  
 * Mask any portion of the block not inside the logical view window.*/
-void save_block(int pos_x, int pos_y, unsigned char* blk);
+void save_block(int pos_x, int pos_y, unsigned char* blk, int x_dim, int y_dim);
 
 /* Draw masked BLOCK_X_DIM x BLOCK_Y_DIM block at absolute coordinates.  
 * Mask any portion of the block not inside the logical view window.*/
 void draw_mask_block(int pos_x, int pos_y, unsigned char* blk, unsigned char* mask);
+
+void set_palette_colours(unsigned char palette, unsigned char red, unsigned char green, unsigned char blue); /**/
+void floating_text(int draw_save, int fruit_type, int play_x, int play_y); /**/
 
 #endif /* MODEX_H */

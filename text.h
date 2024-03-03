@@ -44,8 +44,13 @@
 #define STATUS_X_DIM    320     /*Status bar dimensions*/
 #define STATUS_Y_DIM    18
 
+#define TRANSPARENCY_OFFSET 0x40    /*64 offset for transparency*/  /**/
+
 /* Standard VGA text font. */
 extern unsigned char font_data[256][16];
-void string_to_buffer(unsigned char *buffer, unsigned char colour_text, const char *string, int level);  /*function declaration of image to graphics helper function*/
+
+/*function declaration of image to graphics helper function*/
+void string_to_buffer(unsigned char *buffer, unsigned char colour_text, const char *string, int level);
+void transparent_buffer(unsigned char *buffer, const char *string); /**/
 
 #endif /* TEXT_H */

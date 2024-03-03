@@ -607,3 +607,21 @@ void string_to_buffer(unsigned char *buffer, unsigned char colour_text, const ch
     }
   }
 }
+
+/**/
+void transparent_buffer(unsigned char *buffer, const char *string){
+  unsigned int str_len=strlen(string);
+  unsigned int str_idx,row,col,buf_pos;
+  
+  for(str_idx=0; str_idx<str_len; str_idx++){
+    int char_idx=(int)string[str_idx];
+    for(row=0; row<FONT_HEIGHT; row++){
+      for(col=0; col<FONT_WIDTH; col++){
+        buf_pos=((str_idx*FONT_WIDTH)+col)+(row*str_len*FONT_WIDTH);
+        if((font_data[char_idx][row] >> (FONT_WIDTH-col-1)) & 0x01){
+          buffer[buf_pos]=buffer[buf_pos]+TRANSPARENCY_OFFSET;
+        }
+      }
+    }
+  }
+}
