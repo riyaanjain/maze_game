@@ -56,10 +56,10 @@
 #include "module/mtcp.h"   /**/
 
 /* set to 1 and compile this file by itself to test functionality */
-#define TEST_INPUT_DRIVER   1
+#define TEST_INPUT_DRIVER  1
 
 /* set to 1 to use tux controller; otherwise, uses keyboard input */
-#define USE_TUX_CONTROLLER 0
+#define USE_TUX_CONTROLLER 1
 
 /* stores original terminal settings */
 static struct termios tio_orig;
@@ -287,11 +287,17 @@ int main() {
     init_input();
     ioctl(fd, TUX_INIT);
     //ioctl(fd,MTCP_LED_SET,0x1101);
-    ioctl(fd, TUX_SET_LED, 0x11111111);
+    ioctl(fd, TUX_SET_LED, 0x33333333);
     ioctl(fd, TUX_BUTTONS, &tux_button_tester);
 
     while (1) {
         printf("CURRENT DIRECTION IS %s\n", dir_names[dir]);
+
+        if (ioctl(fd, TUX_BUTTONS, &tux_button_tester) != 0){   /**/
+            perror("TUX_BUTTONS ioctl failed");
+            break;
+        }
+
         while ((cmd = get_command(dir)) == TURN_NONE);
         if (cmd == CMD_QUIT)
             break;

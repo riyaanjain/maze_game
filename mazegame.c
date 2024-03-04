@@ -61,9 +61,6 @@
 
 #define MASK_SIZE 144   /*mask constant*/
 
-int fruit_time;     /**/
-int fruit_type;  /**/
-
 /*
  * If NDEBUG is not defined, we execute sanity checks to make sure that
  * changes to enumerations, bit maps, etc., have been made consistently.
@@ -107,7 +104,10 @@ static void move_left(int* xpos);
 static int unveil_around_player(int play_x, int play_y);
 static void *rtc_thread(void *arg);
 static void *keyboard_thread(void *arg);
+
 static void player_colour_changer(); /**/
+static void *tux_thread(void *arg);
+static void tux_time()
 
 /* 
  * prepare_maze_level
@@ -326,6 +326,9 @@ int fd;
 unsigned long data;
 static struct termios tio_orig;
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+int fruit_time;     /**/
+int fruit_type;  /**/
+int ft;   /**/
 
 /*
  * keyboard_thread
@@ -382,6 +385,51 @@ static void *keyboard_thread(void *arg) {
 
     return 0;
 }
+
+/**/
+/*
+ * tux_thread
+ *   DESCRIPTION: Thread that handles tux inputs
+ *   INPUTS: none
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: none
+ */
+static void *tux_thread(void *arg){
+    long button;
+    // Break only on win or quit input
+    while(!winner){
+        ioctl(ft,TUX_BUTTONS,&button);
+        button &= 0xFF;     //Low byte all we want
+        if(button==0xFE){
+            quit_flag=1;
+            break;
+        }
+        if(winner){
+            break;
+        }
+        pthread_mutex_lock(&mtx);
+        switch(button){
+            case 0x7F:
+                next_dir=DIR_RIGHT;
+                break;
+            case 0xBF:
+                next_dir=DIR_LEFT;
+                break;
+            case 0xDF:
+                next_dir=DIR_DOWN;
+                break;
+            case 0xEF:
+                next_dir=DIR_UP;
+                break;
+            default:
+                break;
+        }
+        pthread_mutex_unlock(&mtx);
+    }
+    return 0;
+}
+
 
 /* some stats about how often we take longer than a single timer tick */
 static int goodcount = 0;
@@ -445,17 +493,17 @@ static void *rtc_thread(void *arg) {
         next_dir = DIR_STOP;
 
         // Show maze around the player's original position
-        (void)unveil_around_player(play_x, play_y);  /**/
+        (void)unveil_around_player(play_x, play_y);
         int timer;       /*init var to find time*/
         timer = total/32;              /*32 ticks in a second*/
         int fruit;     /*init var for number of fruits*/
         fruit = ret_n_fruits();      /*invokes getter*/
 
-        //int last_total=0;  /**/
-
         save_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM); /*saves background*/
         draw_mask_block(play_x,play_y,get_player_block(last_dir),get_player_mask(last_dir)); /*draws masked block*/
+        
         show_screen();
+        
         show_status_bar(level,timer,fruit);  /*shows status bar*/
         draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);    /*draws block*/
 
@@ -465,8 +513,6 @@ static void *rtc_thread(void *arg) {
         while ((quit_flag == 0) && (goto_next_level == 0)) {
             // Wait for Periodic Interrupt
             ret = read(fd, &data, sizeof(unsigned long));
-
-            //player_colour_changer(); /**/
             
             // Update tick to keep track of time.  If we missed some
             // interrupts we want to update the player multiple times so

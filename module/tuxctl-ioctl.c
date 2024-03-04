@@ -33,7 +33,7 @@
 //global variables
 static unsigned char arr[2];	/**/
 static bool spam;	//was unsigned int
-unsigned char saved_state[6];	/**/ //6 bytes of LED packet, pre-reset state
+static unsigned char saved_state[6];	/**/ //6 bytes of LED packet, pre-reset state
 
 int tuxctl_init(struct tty_struct *tty);
 int tuxctl_set_led(struct tty_struct *tty, unsigned long argument);
@@ -139,7 +139,7 @@ int tuxctl_set_led(struct tty_struct *tty, unsigned long argument){
 		if(led_mask & (1<<i)){
 			led_cmds[i+2] = display_segments[argument & 0x0F];
 			if(decimal_mask & (1<<i)){
-				led_cmds[i+2] != 0x10;
+				led_cmds[i+2] = led_cmds[i+2] | 0x10;	//bit 5=1
 			}
 		}
 		else{
@@ -147,19 +147,37 @@ int tuxctl_set_led(struct tty_struct *tty, unsigned long argument){
 		}
 		argument>>=4;
 	}
-	memcpy(saved_state,led_cmds,sizeof(led_cmds));
-	tuxctl_ldisc_put(tty,led_cmds,sizeof(led_cmds));
+	if(tuxctl_ldisc_put(tty,led_cmds,sizeof(led_cmds))==0){		//swapped
+		memcpy(saved_state,led_cmds,sizeof(led_cmds));
+	}
 	return 0;
 }
 
-
+/**/
 int tuxctl_buttons(struct tty_struct *tty, unsigned long argument){
 	if(!argument){
 		return -EINVAL;
 	}
 	else{
+		unsigned char button_state=0;
+		int ret;
 
+		unsigned char button_input = ~arr[0] & 0x0F;		//0x0F = 0000 1111 (gives lower 4 bits) and gets CBAS
+		unsigned char direction_input = ~arr[1] & 0x0F;				//right left down up RLDU
 
+		button_state |= (direction_input & (1<<0)) ? (1<<7) : 0;	//right
+		button_state |= (direction_input & (1<<2)) ? (1<<6) : 0;	//left
+		button_state |= (direction_input & (1<<1)) ? (1<<5) : 0;	//down
+		button_state |= (direction_input & (1<<3)) ? (1<<4) : 0;	//up
+		button_state |= (button_input & (1<<0)) ? (1<<3) : 0;	//C
+		button_state |= (button_input & (1<<1)) ? (1<<2) : 0;	//B
+		button_state |= (button_input & (1<<2)) ? (1<<1) : 0;	//A
+		button_state |= (button_input & (1<<3)) ? (1<<0) : 0;	//start
+
+		ret = copy_to_user((unsigned char *)argument,&button_state,sizeof(button_state));
+		if(ret){
+			return -EINVAL;
+		}
 		return 0;
 	}
 }
