@@ -101,7 +101,7 @@ tuxctl_ioctl (struct tty_struct* tty, struct file* file,
 			return tuxctl_set_led(tty,arg);	//ret 0
 		}
 	case TUX_LED_ACK:
-		return 0;
+		return 0;		//or return -EINVAL?
 	case TUX_LED_REQUEST:
 		return 0;
 	case TUX_READ_LED:
