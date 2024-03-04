@@ -52,8 +52,11 @@
 #include "input.h"
 #include "maze.h"
 
+#include "module/tuxctl-ioctl.h"   /**/
+#include "module/mtcp.h"   /**/
+
 /* set to 1 and compile this file by itself to test functionality */
-#define TEST_INPUT_DRIVER  1
+#define TEST_INPUT_DRIVER   1
 
 /* set to 1 to use tux controller; otherwise, uses keyboard input */
 #define USE_TUX_CONTROLLER 0
@@ -173,8 +176,8 @@ cmd_t get_command(dir_t cur_dir) {
     }
 
     if(USE_TUX_CONTROLLER == 1) /**/ //tux button test
-        {   
-        switch(tux_button_testerbutton_tester)
+    {   
+        switch(tux_button_tester)
         {
             case 0x80: //right
                 pushed = DIR_RIGHT;
@@ -257,7 +260,7 @@ void shutdown_input() {
  */
 void display_time_on_tux(int num_seconds) {
 #if (USE_TUX_CONTROLLER != 0)
-#error "Tux controller code is not operational yet."
+//#error "Tux controller code is not operational yet."
 #endif
 }
 
@@ -279,13 +282,12 @@ int main() {
     }
 
     fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY); /**/
-    int ldisc num = N_MOUSE;
-    ioctl(fd, TIOCSETD, &ldisc num);
-
+    int ldisc_num = N_MOUSE;
+    ioctl(fd, TIOCSETD, &ldisc_num);
     init_input();
-
-    ioctl(fd, TUX_INIT);    /**/
-    ioctl(fd, TUX_SET_LED, 0xF7F7FFFF);
+    ioctl(fd, TUX_INIT);
+    //ioctl(fd,MTCP_LED_SET,0x1101);
+    ioctl(fd, TUX_SET_LED, 0x11111111);
     ioctl(fd, TUX_BUTTONS, &tux_button_tester);
 
     while (1) {

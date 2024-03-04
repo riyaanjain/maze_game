@@ -130,7 +130,7 @@
 
 #define MTCP_ERROR 	MTCP_RESP(0x1F)
 
-;/* 
+/* 
 ; PC to MTC Command Opcodes - don't change these without changing the order
 ; of the jump table in mainloop.asm. The defines limit the number to 32.
 ; */

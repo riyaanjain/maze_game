@@ -26,18 +26,18 @@
 #include "tuxctl-ioctl.h"
 #include "mtcp.h"
 
+#define debug(str, ...) \
+	printk(KERN_DEBUG "%s: " str, __FUNCTION__, ## __VA_ARGS__)
+/**/
+
 //global variables
 static unsigned char arr[2];	/**/
-static unsigned int ack=1;	/**/
-static unsigned int spam;
-static unsigned int led;
+static bool spam;	//was unsigned int
+unsigned char saved_state[6];	/**/ //6 bytes of LED packet, pre-reset state
 
 int tuxctl_init(struct tty_struct *tty);
 int tuxctl_set_led(struct tty_struct *tty, unsigned long argument);
-int tuxctl_buttons(struct tty_struct *tty, (unsigned long *)argument);
-
-#define debug(str, ...) \
-	printk(KERN_DEBUG "%s: " str, __FUNCTION__, ## __VA_ARGS__)
+int tuxctl_buttons(struct tty_struct *tty, unsigned long argument);
 
 /************************ Protocol Implementation *************************/
 
@@ -60,12 +60,12 @@ void tuxctl_handle_packet (struct tty_struct* tty, unsigned char* packet)
 			arr[1]=c;
 			break;
 		case MTCP_ACK:
-			ack=1;
 			spam=0;
 			break;
 		case MTCP_RESET:
 			tuxctl_init(tty);
-			tuxctl_set_led(tty,led);
+			tuxctl_ldisc_put(tty,saved_state,sizeof(saved_state));
+			//tuxctl_set_led(tty,led);
 			break;
 	}
 
@@ -85,26 +85,81 @@ void tuxctl_handle_packet (struct tty_struct* tty, unsigned char* packet)
  * valid.                                                                     *
  *                                                                            *
  ******************************************************************************/
-int 
+int /**/
 tuxctl_ioctl (struct tty_struct* tty, struct file* file, 
 	      unsigned cmd, unsigned long arg)
 {
     switch (cmd) {
 	case TUX_INIT:
+		spam=0;
 		return tuxctl_init(tty);		//should ret 0
 	case TUX_BUTTONS:
-		return tuxctl_buttons(tty,(unsigned long*)argument);	//ret 0 or -EINVAL if pointer to arg not valid
+		return tuxctl_buttons(tty,arg);	//ret 0 or -EINVAL if pointer to arg not valid
 	case TUX_SET_LED:
-		return tuxctl_set_led(tty,argument);	//ret 0
+		if(!spam){
+			spam=1;
+			return tuxctl_set_led(tty,arg);	//ret 0
+		}
 	case TUX_LED_ACK:
-		return -EINVAL;
+		return 0;
 	case TUX_LED_REQUEST:
-		return -EINVAL;
+		return 0;
 	case TUX_READ_LED:
-		return -EINVAL;
+		return 0;
 	default:
 	    return -EINVAL;
     }
 }
 
-int tuxctl_init(struct tty_struct *tty){}
+/**/
+int tuxctl_init(struct tty_struct *tty){
+	unsigned char cmds[2];
+	spam=0;
+	cmds[0]=MTCP_BIOC_ON;
+	cmds[1]=MTCP_LED_USR;
+	tuxctl_ldisc_put(tty,cmds,2);
+
+	return 0;
+}
+
+/**/
+
+int tuxctl_set_led(struct tty_struct *tty, unsigned long argument){
+	static const unsigned char display_segments[16]={
+		0xE7,0x06,0xCB,0x8F,0x2E,0xAD,0xED,0x86,
+		0xEF,0xAE,0xEE,0x6D,0xE1,0x4F,0xE9,0xE8
+	};
+
+	unsigned char led_cmds[6]={MTCP_LED_SET,0x0F};	//command and all leds on
+	unsigned char led_mask=(argument>>16) & 0x0F;
+	unsigned char decimal_mask=(argument>>24) & 0x0F;
+
+	unsigned int i;
+	for(i=0; i<4; ++i){
+		if(led_mask & (1<<i)){
+			led_cmds[i+2] = display_segments[argument & 0x0F];
+			if(decimal_mask & (1<<i)){
+				led_cmds[i+2] != 0x10;
+			}
+		}
+		else{
+			led_cmds[i+2]=0x00;
+		}
+		argument>>=4;
+	}
+	memcpy(saved_state,led_cmds,sizeof(led_cmds));
+	tuxctl_ldisc_put(tty,led_cmds,sizeof(led_cmds));
+	return 0;
+}
+
+
+int tuxctl_buttons(struct tty_struct *tty, unsigned long argument){
+	if(!argument){
+		return -EINVAL;
+	}
+	else{
+
+
+		return 0;
+	}
+}

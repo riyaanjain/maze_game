@@ -44,7 +44,7 @@
 #define STATUS_X_DIM    320     /*Status bar dimensions*/
 #define STATUS_Y_DIM    18
 
-#define TRANSPARENCY_OFFSET 0x40    /*64 offset for transparency*/  /**/
+#define TRANSPARENCY_OFFSET 64    /*64 offset for transparency*/  /**/
 
 /* Standard VGA text font. */
 extern unsigned char font_data[256][16];

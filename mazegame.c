@@ -276,7 +276,7 @@ static int unveil_around_player(int play_x, int play_y) {    /**/
 
     /* Check for fruit at the player's position. */
     fruit_type=check_for_fruit (x, y);  /**/
-    if(fruit_type!=0){     /**/
+    if(fruit_type){     /**/
         fruit_time=96;        /*3 seconds, 96 ticks*/
     }
 
@@ -570,7 +570,7 @@ static void *rtc_thread(void *arg) {
                     need_redraw = 1;
                 }
             }
-            if (need_redraw)  /**/ //uncommenting this makes the text appear in one place
+            if (need_redraw)
                 fruit=ret_n_fruits();     /*for status bar*/
                 timer=total/32;
 

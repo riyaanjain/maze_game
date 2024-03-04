@@ -34,7 +34,7 @@
  *        Integrated original release back into main code base.
  */
 
-#include <string.h>
+#include "string.h"
 
 #include "text.h"
 
