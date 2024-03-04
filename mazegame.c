@@ -112,7 +112,7 @@ static void *keyboard_thread(void *arg);
 
 static void player_colour_changer(); /**/
 static void *tux_thread(void *arg); /**/
-//static void tux_time();   /**/
+static void tux_time(int timer);   /**/
 
 /* 
  * prepare_maze_level
@@ -400,29 +400,30 @@ static void *keyboard_thread(void *arg) {
  */
 static void *tux_thread(void *arg){
     unsigned long button;
+    
     // Break only on win or quit input
     while(!winner){
         ioctl(ft,TUX_BUTTONS,&button);
         button &= 0xFF;     //Low byte all we want
-        if(button==0xFE){
-            quit_flag=1;
-            break;
-        }
-        if(winner){
-            break;
-        }
+        // if(button==0xFE){
+        //     quit_flag=1;
+        //     break;
+        // }
+        // if(winner){
+        //     break;
+        // }
         pthread_mutex_lock(&mtx);
         switch(button){
-            case 0x7F:
+            case 16:
                 next_dir=DIR_RIGHT;
                 break;
-            case 0xBF:
+            case 32:
                 next_dir=DIR_LEFT;
                 break;
-            case 0xDF:
+            case 64:
                 next_dir=DIR_DOWN;
                 break;
-            case 0xEF:
+            case 128:
                 next_dir=DIR_UP;
                 break;
             default:
@@ -433,6 +434,9 @@ static void *tux_thread(void *arg){
     return 0;
 }
 
+static void tux_time(int timer){
+    
+}
 
 /* some stats about how often we take longer than a single timer tick */
 static int goodcount = 0;
@@ -507,11 +511,11 @@ static void *rtc_thread(void *arg) {
         
         show_screen();
 
-        unsigned long button;   /**/
-        ioctl(ft,TUX_BUTTONS,&button);  /**/
+        // unsigned long button;   /**/
+        // ioctl(ft,TUX_BUTTONS,&button);  /**/
 
         
-        show_status_bar(level,button,fruit);  /*shows status bar*/  /**/
+        show_status_bar(level,timer,fruit);  /*shows status bar*/  /**/
         draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);    /*draws block*/
 
         // get first Periodic Interrupt
@@ -627,12 +631,12 @@ static void *rtc_thread(void *arg) {
                 fruit=ret_n_fruits();     /*for status bar*/
                 timer=total/32;
 
-                ioctl(ft,TUX_BUTTONS,&button);
+                //ioctl(ft,TUX_BUTTONS,&button);
 
                 save_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);   /*saves*/
                 draw_mask_block(play_x,play_y,get_player_block(last_dir),get_player_mask(last_dir));   /*draws*/
                 //show_screen();  /**/
-                show_status_bar(level,button,fruit); /**/    /**/
+                show_status_bar(level,timer,fruit); /**/    /**/
 
                 //draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);
                 
@@ -681,6 +685,8 @@ static void player_colour_changer(){
     set_palette_colours(PLAYER_CENTER_COLOR,colour[0],colour[1],colour[2]);
 }
 
+
+
 /*
  * main
  *   DESCRIPTION: Initializes and runs the two threads
@@ -696,12 +702,12 @@ int main() {
 
     pthread_t tid1;
     pthread_t tid2;
+    pthread_t tid3;
 
     // Initialize RTC
     fd = open("/dev/rtc", O_RDONLY, 0);
 
-    //init tux
-    ft = open("/dev/ttyS0", O_RDWR | O_NOCTTY); /**/
+    ft = open("/dev/ttyS0", O_RDWR | O_NOCTTY); //init tux
     int ldisc_num = N_MOUSE;
     ioctl(ft, TIOCSETD, &ldisc_num);
     
@@ -744,12 +750,12 @@ int main() {
     // Create the threads
     pthread_create(&tid1, NULL, rtc_thread, NULL);
     pthread_create(&tid2, NULL, keyboard_thread, NULL);
-    pthread_create(&tid3, NULL, rtc_thread, NULL);
+    pthread_create(&tid3, NULL, tux_thread, NULL);
     
     // Wait for all the threads to end
     pthread_join(tid1, NULL);
     pthread_join(tid2, NULL);
-    pthread_cancel(tid3);   /**/
+    pthread_cancel(tid3);
 
     // Shutdown Display
     clear_mode_X();
@@ -759,6 +765,7 @@ int main() {
         
     // Close RTC
     close(fd);
+    close(ft);  //close tux
 
     // Print outcome of the game
     if (winner == 1) {    

@@ -2,8 +2,6 @@ MP2 buglog
  
 Empty black bar for status bar, had to make changes to mazegame.c.
  
-For loop initial declaration outside c99 mode, cannot declare variables inside for loop.
- 
 Bottom wall behind status bar, subtracted 18 (status_y_dim) from image_y_dim.
  
 The timer didn’t reset per level, had to set total to 0 when goto_next_level is active.
@@ -24,8 +22,15 @@ For the gradient for changing player colour, the initial transition was from whi
 To fix this I set the starting values of the colours to 0x3E so that it goes the 0x3F next then starts at 0x00 again,
 making it smooth throughout.
 
+For loop initial declaration outside c99 mode, cannot declare variables inside for loop.
+
 Prints floating fruit text and goes to next level instantly. Then started printing text but keeping on each frame
 not following the player around, following the player but staying on each position player moves. Was returning
 the fruit_time in unveil around player instead of just setting the value, this fixed jumping to next level but 
 the text was either not moving or moved and stayed in each frame. Needed to declare string_height as static variable
 to be stored, now string appears and follows player but for very short time.
+
+Tux buttons were not working. First in the driver it was meant to be active low but I had implemented as active high, changing 
+that my buttons started registering in input.c test. Then the player was not moving in the game, so I set the value in button
+to replace that of time in status bar and the tux buttons were producing values, I had the wrong values set. Then it still didnt 
+work with the right values and I found I hadnt called the right ioctl functions in main function in mazegame.c.

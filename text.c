@@ -621,7 +621,7 @@ void transparent_buffer(unsigned char *buffer, const char *string){
     int char_idx=(int)string[str_idx];
     for(row=0; row<FONT_HEIGHT; row++){
       for(col=0; col<FONT_WIDTH; col++){
-        buf_pos = row*IMAGE_Y_DIM + (str_idx*FONT_WIDTH) + col;
+        buf_pos=((str_idx*FONT_WIDTH)+col)+(row*str_len*FONT_WIDTH);
         if((font_data[char_idx][row]>>(FONT_WIDTH-col-1)) & 0x01){
           buffer[buf_pos]=buffer[buf_pos]+TRANSPARENCY_OFFSET;
         }
