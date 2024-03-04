@@ -1210,7 +1210,7 @@ void set_palette_colours(unsigned char palette, unsigned char red, unsigned char
 
 /**/
 void floating_text(int draw_save, int fruit_type, int play_x, int play_y){
-    static unsigned char old_buffer[13*FONT_WIDTH*FONT_HEIGHT];     //max size
+    static unsigned char old_buffer[13*FONT_WIDTH*FONT_HEIGHT];     //max size, 13 characters maximum
     static unsigned char new_buffer[13*FONT_WIDTH*FONT_HEIGHT];
     static int string_width=0, centred_x=0, centred_y=0, string_height=0;
     char *string;
@@ -1222,9 +1222,8 @@ void floating_text(int draw_save, int fruit_type, int play_x, int play_y){
         string = fruit_texts[fruit_type-1];
         string_width=FONT_WIDTH*strlen(string);
         string_height=FONT_HEIGHT;
-        //unsigned char new_buffer[string_width*string_height];
         centred_x = play_x+(BLOCK_X_DIM-string_width)/2;
-        centred_y = (play_y-1-(2*BLOCK_Y_DIM))>BLOCK_Y_DIM ? (play_y-1-(2*BLOCK_Y_DIM)) : BLOCK_Y_DIM;
+        centred_y = (play_y-1-(2*BLOCK_Y_DIM)) > BLOCK_Y_DIM ? (play_y-1-(2*BLOCK_Y_DIM)) : BLOCK_Y_DIM;
         save_block(centred_x,centred_y,old_buffer,string_width,string_height);
         unsigned int i;
         for(i=0; i<string_width*string_height; i++){

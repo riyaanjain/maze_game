@@ -53,13 +53,18 @@
 #include <termios.h>
 #include <pthread.h>
 
+#include "module/tuxctl-ioctl.h"    /**/
+
 #define BACKQUOTE 96
 #define UP        65
 #define DOWN      66
 #define RIGHT     67
 #define LEFT      68
 
-#define MASK_SIZE 144   /*mask constant*/
+#define MASK_SIZE 144   /*mask constant, 12*12, block_x_dim*block_y_dim */
+
+int fruit_time;     /**/
+int fruit_type;  /**/
 
 /*
  * If NDEBUG is not defined, we execute sanity checks to make sure that
@@ -106,8 +111,8 @@ static void *rtc_thread(void *arg);
 static void *keyboard_thread(void *arg);
 
 static void player_colour_changer(); /**/
-static void *tux_thread(void *arg);
-static void tux_time()
+static void *tux_thread(void *arg); /**/
+//static void tux_time();   /**/
 
 /* 
  * prepare_maze_level
@@ -326,8 +331,6 @@ int fd;
 unsigned long data;
 static struct termios tio_orig;
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
-int fruit_time;     /**/
-int fruit_type;  /**/
 int ft;   /**/
 
 /*
@@ -396,7 +399,7 @@ static void *keyboard_thread(void *arg) {
  *   SIDE EFFECTS: none
  */
 static void *tux_thread(void *arg){
-    long button;
+    unsigned long button;
     // Break only on win or quit input
     while(!winner){
         ioctl(ft,TUX_BUTTONS,&button);
@@ -503,8 +506,12 @@ static void *rtc_thread(void *arg) {
         draw_mask_block(play_x,play_y,get_player_block(last_dir),get_player_mask(last_dir)); /*draws masked block*/
         
         show_screen();
+
+        unsigned long button;   /**/
+        ioctl(ft,TUX_BUTTONS,&button);  /**/
+
         
-        show_status_bar(level,timer,fruit);  /*shows status bar*/
+        show_status_bar(level,button,fruit);  /*shows status bar*/  /**/
         draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);    /*draws block*/
 
         // get first Periodic Interrupt
@@ -620,10 +627,12 @@ static void *rtc_thread(void *arg) {
                 fruit=ret_n_fruits();     /*for status bar*/
                 timer=total/32;
 
+                ioctl(ft,TUX_BUTTONS,&button);
+
                 save_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);   /*saves*/
                 draw_mask_block(play_x,play_y,get_player_block(last_dir),get_player_mask(last_dir));   /*draws*/
                 //show_screen();  /**/
-                show_status_bar(level,timer,fruit); /**/
+                show_status_bar(level,button,fruit); /**/    /**/
 
                 //draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);
                 
@@ -633,7 +642,7 @@ static void *rtc_thread(void *arg) {
 
                 show_screen();
 
-                if(fruit_type!=0 && fruit_time>=0){     /**/
+                if(fruit_type!=0 && fruit_time>0){     /**/
                     floating_text(0,fruit_type,play_x,play_y);
                     fruit_time--;
                 }
@@ -690,6 +699,13 @@ int main() {
 
     // Initialize RTC
     fd = open("/dev/rtc", O_RDONLY, 0);
+
+    //init tux
+    ft = open("/dev/ttyS0", O_RDWR | O_NOCTTY); /**/
+    int ldisc_num = N_MOUSE;
+    ioctl(ft, TIOCSETD, &ldisc_num);
+    
+    ioctl(ft, TUX_INIT);
     
     // Enable RTC periodic interrupts at update_rate Hz
     // Default max is 64...must change in /proc/sys/dev/rtc/max-user-freq
@@ -728,10 +744,12 @@ int main() {
     // Create the threads
     pthread_create(&tid1, NULL, rtc_thread, NULL);
     pthread_create(&tid2, NULL, keyboard_thread, NULL);
+    pthread_create(&tid3, NULL, rtc_thread, NULL);
     
     // Wait for all the threads to end
     pthread_join(tid1, NULL);
     pthread_join(tid2, NULL);
+    pthread_cancel(tid3);   /**/
 
     // Shutdown Display
     clear_mode_X();
