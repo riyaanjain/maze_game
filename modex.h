@@ -59,8 +59,6 @@
 #define STATUS_Y_DIM    18      /* pixels*/
 #define STATUS_X_WIDTH  (STATUS_X_DIM / 4) /*80 pixels*/
 
-/* #define TRANSPARENCY_OFFSET 0x40  */       /**/ //transparency offset is 64
-
 /*
  * NOTES
  *
@@ -153,7 +151,7 @@ void save_block(int pos_x, int pos_y, unsigned char* blk, int x_dim, int y_dim);
 * Mask any portion of the block not inside the logical view window.*/
 void draw_mask_block(int pos_x, int pos_y, unsigned char* blk, unsigned char* mask);
 
-void set_palette_colours(unsigned char palette, unsigned char red, unsigned char green, unsigned char blue); /**/
-void floating_text(int draw_save, int fruit_type, int play_x, int play_y); /**/
+void set_palette_colours(unsigned char palette, unsigned char red, unsigned char green, unsigned char blue); /*Sets colour palette*/
+void floating_text(int draw_save, int fruit_type, int play_x, int play_y); /*Outputs fruit text floating*/
 
 #endif /* MODEX_H */

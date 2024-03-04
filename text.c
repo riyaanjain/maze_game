@@ -609,7 +609,16 @@ void string_to_buffer(unsigned char *buffer, unsigned char colour_text, const ch
   }
 }
 
-/**/
+/*
+ * transparent_buffer
+ *   DESCRIPTION: image to graphics helper function which converts the string into buffer that holds
+ *                the graphical representation of the transparent ASCII characters
+ *   INPUTS: const char *string – string to be written into buffer
+ *           *buffer – buffer to hold char data
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: buffer with graphical representation of ASCII characters
+ */
 void transparent_buffer(unsigned char *buffer, const char *string){
   unsigned int str_len=strlen(string);
   unsigned int str_idx;

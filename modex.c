@@ -554,8 +554,7 @@ void clear_screens() {
  *   RETURN VALUE: none
  *   SIDE EFFECTS: draws into the build buffer
  */
-/**/
-void draw_full_block(int pos_x, int pos_y, unsigned char* blk, int x_dim, int y_dim) {
+void draw_full_block(int pos_x, int pos_y, unsigned char* blk, int x_dim, int y_dim) {  /*modified to work with different block sizes for floating text buffer*/
     int dx, dy;          /* loop indices for x and y traversal of block */
     int x_left, x_right; /* clipping limits in horizontal dimension     */
     int y_top, y_bottom; /* clipping limits in vertical dimension       */
@@ -693,8 +692,7 @@ void draw_mask_block(int pos_x, int pos_y, unsigned char* blk, unsigned char* ma
  *   RETURN VALUE: none
  *   SIDE EFFECTS: draws into the build buffer
  */
-/**/
-void save_block(int pos_x, int pos_y, unsigned char* blk, int x_dim, int y_dim) {
+void save_block(int pos_x, int pos_y, unsigned char* blk, int x_dim, int y_dim) {   /*modified to work with different block sizes for floating text buffer*/
     int dx, dy;          /* loop indices for x and y traversal of block */
     int x_left, x_right; /* clipping limits in horizontal dimension     */
     int y_top, y_bottom; /* clipping limits in vertical dimension       */
@@ -1200,7 +1198,15 @@ void show_status_bar(int level, int time, int fruit){
     }
 }
 
-/**/
+/*
+ * set_palette_colours
+ *   DESCRIPTION: Sets colour palette/
+ *   INPUTS: palette -- target palette to be modified
+ *           red,green,blue -- their respective values
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: New colour palette for target palette
+ */
 void set_palette_colours(unsigned char palette, unsigned char red, unsigned char green, unsigned char blue){
     OUTB(0x3C8, palette); //target palette
     OUTB(0x3C9, red);
@@ -1208,7 +1214,17 @@ void set_palette_colours(unsigned char palette, unsigned char red, unsigned char
     OUTB(0x3C9, blue);
 }
 
-/**/
+/*
+ * floating_text
+ *   DESCRIPTION: Show floating text on video display
+ *   INPUTS: draw_save -- draw mode =1, save mode =1. RW
+ *           fruit_type -- value of fruit_type from 1 to NUM_FRUIT_TYPES
+ *           play_x, play_y - x and y coordinates of player
+ *   OUTPUTS: Floating fruit text above player
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: Fruit text is written to video memory by copying from buffer and shifts the VGA
+ *                  display to point to status 
+ */
 void floating_text(int draw_save, int fruit_type, int play_x, int play_y){
     static unsigned char old_buffer[13*FONT_WIDTH*FONT_HEIGHT];     //max size, 13 characters maximum
     static unsigned char new_buffer[13*FONT_WIDTH*FONT_HEIGHT];

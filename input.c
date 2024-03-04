@@ -232,7 +232,7 @@ int main() {
         return 3;
     }
 
-    fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY); /**/
+    fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY); /*open tux*/
     int ldisc_num = N_MOUSE;
     ioctl(fd, TIOCSETD, &ldisc_num);
     init_input();
@@ -247,11 +247,6 @@ int main() {
 
     while (1) {
         printf("CURRENT DIRECTION IS %s\n", dir_names[dir]);
-
-        // if (ioctl(fd, TUX_BUTTONS, &tux_button_tester) != 0){   /**/
-        //     perror("TUX_BUTTONS ioctl failed");
-        //     break;
-        // }
 
         while ((cmd = get_command(dir)) == TURN_NONE);
         if (cmd == CMD_QUIT)

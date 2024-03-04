@@ -53,7 +53,7 @@
 #include <termios.h>
 #include <pthread.h>
 
-#include "module/tuxctl-ioctl.h"    /**/
+#include "module/tuxctl-ioctl.h"    /*include for definitons*/
 
 #define BACKQUOTE 96
 #define UP        65
@@ -63,8 +63,8 @@
 
 #define MASK_SIZE 144   /*mask constant, 12*12, block_x_dim*block_y_dim */
 
-int fruit_time;     /**/
-int fruit_type;  /**/
+int fruit_time;     /*Amount of time fruit text will be displayed*/
+int fruit_type;  /*type of fruit*/
 
 /*
  * If NDEBUG is not defined, we execute sanity checks to make sure that
@@ -110,9 +110,9 @@ static int unveil_around_player(int play_x, int play_y);
 static void *rtc_thread(void *arg);
 static void *keyboard_thread(void *arg);
 
-static void player_colour_changer(); /**/
-static void *tux_thread(void *arg); /**/
-static void tux_time(int timer);   /**/
+static void player_colour_changer(); /*function declarations*/
+static void *tux_thread();
+static void tux_time(int timer);
 
 /* 
  * prepare_maze_level
@@ -274,14 +274,14 @@ static void move_left(int* xpos) {
  *                 consumed fruit, and maze exit; consumes fruit and
  *                 updates displayed fruit counts
  */
-static int unveil_around_player(int play_x, int play_y) {    /**/
+static int unveil_around_player(int play_x, int play_y) { 
     int x = play_x / BLOCK_X_DIM; /* player's maze lattice position */
     int y = play_y / BLOCK_Y_DIM;
     int i, j;            /* loop indices for unveiling maze squares */
 
     /* Check for fruit at the player's position. */
-    fruit_type=check_for_fruit (x, y);  /**/
-    if(fruit_type){     /**/
+    fruit_type=check_for_fruit (x, y);  /*uses check for fruit to return fruit type between 1 and NUM_FRUIT_TYPES*/
+    if(fruit_type){     /*if not 0, so valid fruit*/
         fruit_time=96;        /*3 seconds, 96 ticks*/
     }
 
@@ -331,7 +331,7 @@ int fd;
 unsigned long data;
 static struct termios tio_orig;
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
-int ft;   /**/
+int ft;   /*init tux file*/
 
 /*
  * keyboard_thread
@@ -389,29 +389,22 @@ static void *keyboard_thread(void *arg) {
     return 0;
 }
 
-/**/
 /*
  * tux_thread
  *   DESCRIPTION: Thread that handles tux inputs
  *   INPUTS: none
  *   OUTPUTS: none
- *   RETURN VALUE: none
- *   SIDE EFFECTS: none
+ *   RETURN VALUE: 0
+ *   SIDE EFFECTS: buttons on tux control player
  */
-static void *tux_thread(void *arg){
+static void *tux_thread(){
     unsigned long button;
     
     // Break only on win or quit input
     while(!winner){
         ioctl(ft,TUX_BUTTONS,&button);
-        button &= 0xFF;     //Low byte all we want
-        // if(button==0xFE){
-        //     quit_flag=1;
-        //     break;
-        // }
-        // if(winner){
-        //     break;
-        // }
+        button &= 0xFF;     //Low byte of button all we want
+
         pthread_mutex_lock(&mtx);
         switch(button){
             case 16:
@@ -434,8 +427,27 @@ static void *tux_thread(void *arg){
     return 0;
 }
 
+/*
+ * tux_time
+ *   DESCRIPTION: Takes time per level and manipulates it into tux form and sets the
+ *                  tux leds to display the time.
+ *   INPUTS: timer - time elapsed per level
+ *   OUTPUTS: none
+ *   RETURN VALUE: 0
+ *   SIDE EFFECTS: tux displays time elapsed per level
+ */
 static void tux_time(int timer){
-    
+    int min = timer/60;
+    int sec = timer%60;
+    unsigned long led_cmd = 0x040F0000;     //init LED value
+
+    int min_tens=min/10;
+    int min_ones=min%10;
+    int sec_tens=sec/10;
+    int sec_ones=sec%10;
+
+    led_cmd |= (min_tens<<12) | (min_ones<<8) | (sec_tens<<4) | sec_ones;
+    ioctl(ft,TUX_SET_LED,led_cmd);
 }
 
 /* some stats about how often we take longer than a single timer tick */
@@ -460,7 +472,7 @@ static void *rtc_thread(void *arg) {
     int goto_next_level = 0;
     unsigned char block_buffer[MASK_SIZE]; /*buffer of block being drawn, saves old one*/
 
-    /**/ //wall colours for the levels
+    /* wall colours for the 10 levels */
     unsigned char wall_colours[10][3]={
     {0xDC, 0x14, 0x3C},
     {0x02, 0xBF, 0xAF},
@@ -477,7 +489,7 @@ static void *rtc_thread(void *arg) {
     // Loop over levels until a level is lost or quit.
     for (level = 1; (level <= MAX_LEVEL) && (quit_flag == 0); level++) {
 
-        set_palette_colours(WALL_FILL_COLOR,wall_colours[level-1][0],wall_colours[level-1][1],wall_colours[level-1][2]); /**/
+        set_palette_colours(WALL_FILL_COLOR,wall_colours[level-1][0],wall_colours[level-1][1],wall_colours[level-1][2]); /*sets rgb of walls per level*/
 
         // Prepare for the level.  If we fail, just let the player win.
         if (prepare_maze_level(level) != 0)
@@ -511,12 +523,14 @@ static void *rtc_thread(void *arg) {
         
         show_screen();
 
-        // unsigned long button;   /**/
-        // ioctl(ft,TUX_BUTTONS,&button);  /**/
+        // unsigned long button;   /*for testing*/
+        // ioctl(ft,TUX_BUTTONS,&button);
 
         
-        show_status_bar(level,timer,fruit);  /*shows status bar*/  /**/
+        show_status_bar(level,timer,fruit);  /*shows status bar*/
         draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);    /*draws block*/
+
+        tux_time(timer);
 
         // get first Periodic Interrupt
         ret = read(fd, &data, sizeof(unsigned long));
@@ -532,7 +546,7 @@ static void *rtc_thread(void *arg) {
 
             total += ticks;
 
-            player_colour_changer();    /**/
+            player_colour_changer();    /*calls function that gradually changes player's colour*/
 
             // If the system is completely overwhelmed we better slow down:
             if (ticks > 8) ticks = 8;
@@ -635,23 +649,23 @@ static void *rtc_thread(void *arg) {
 
                 save_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);   /*saves*/
                 draw_mask_block(play_x,play_y,get_player_block(last_dir),get_player_mask(last_dir));   /*draws*/
-                //show_screen();  /**/
-                show_status_bar(level,timer,fruit); /**/    /**/
+                show_status_bar(level,timer,fruit);
+                tux_time(timer);
 
                 //draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);
                 
-                if(fruit_type!=0 && fruit_time>0){  /**/
+                if(fruit_type!=0 && fruit_time>0){  /*checks if we can draw fruit string*/
                     floating_text(1,fruit_type,play_x,play_y);
                 }
 
                 show_screen();
 
-                if(fruit_type!=0 && fruit_time>0){     /**/
+                if(fruit_type!=0 && fruit_time>0){     /*cjecks to undraw fruit string*/
                     floating_text(0,fruit_type,play_x,play_y);
                     fruit_time--;
                 }
 
-                draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);    /**/
+                draw_full_block(play_x,play_y,block_buffer,BLOCK_X_DIM,BLOCK_Y_DIM);
 
             need_redraw = 0;
         }    
@@ -662,7 +676,14 @@ static void *rtc_thread(void *arg) {
     return 0;
 }
 
-/**/
+/*
+ * player_colour_changer
+ *   DESCRIPTION: Smoothly goes through colour palette for player to glow
+ *   INPUTS: none
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: Keeps calling set palette colours to change the player centre into the the next rgb values
+ */
 static void player_colour_changer(){
     static unsigned char colour[3]={0x3E,0x3E,0x3E}; //rgb init to 3E so that inital transition is smooth (range goes to 3F)
     static int inc_dec=1; //1 increment, -1 decrement
@@ -755,7 +776,7 @@ int main() {
     // Wait for all the threads to end
     pthread_join(tid1, NULL);
     pthread_join(tid2, NULL);
-    pthread_cancel(tid3);
+    pthread_cancel(tid3);       /*added for tux*/
 
     // Shutdown Display
     clear_mode_X();

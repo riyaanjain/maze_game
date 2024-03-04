@@ -28,12 +28,11 @@
 
 #define debug(str, ...) \
 	printk(KERN_DEBUG "%s: " str, __FUNCTION__, ## __VA_ARGS__)
-/**/
 
 //global variables
-static unsigned char arr[2];	/**/
-static bool spam;	//was unsigned int
-static unsigned char saved_state[6];	/**/ //6 bytes of LED packet, pre-reset state
+static unsigned char arr[2];	/*command size*/
+static bool spam; 	/*prevents spamming and acknowledges*/
+static unsigned char saved_state[6];	/*6 bytes of LED packet, pre-reset state*/
 
 int tuxctl_init(struct tty_struct *tty);
 int tuxctl_set_led(struct tty_struct *tty, unsigned long argument);
@@ -85,7 +84,11 @@ void tuxctl_handle_packet (struct tty_struct* tty, unsigned char* packet)
  * valid.                                                                     *
  *                                                                            *
  ******************************************************************************/
-int /**/
+/* tuxctl_ioctl
+ * dispatches to respective role of tux
+ */
+
+int
 tuxctl_ioctl (struct tty_struct* tty, struct file* file, 
 	      unsigned cmd, unsigned long arg)
 {
@@ -111,7 +114,14 @@ tuxctl_ioctl (struct tty_struct* tty, struct file* file,
     }
 }
 
-/**/
+/*
+ * tuxctl_init
+ *   DESCRIPTION: intiitalises the tux, saving previous state
+ *   INPUTS: tux tty
+ *   OUTPUTS: none
+ *   RETURN VALUE: 0
+ *   SIDE EFFECTS: stores MTCP_BIOC_ON and MTCP_LED_USR
+ */
 int tuxctl_init(struct tty_struct *tty){
 	unsigned char cmds[2];
 	spam=0;
@@ -122,8 +132,14 @@ int tuxctl_init(struct tty_struct *tty){
 	return 0;
 }
 
-/**/
-
+/*
+ * tuxctl_set_led
+ *   DESCRIPTION: set leds
+ *   INPUTS: tux tty, argument
+ *   OUTPUTS: none
+ *   RETURN VALUE: 0
+ *   SIDE EFFECTS: sets the leds on tux
+ */
 int tuxctl_set_led(struct tty_struct *tty, unsigned long argument){
 	static const unsigned char display_segments[16]={
 		0xE7,0x06,0xCB,0x8F,0x2E,0xAD,0xED,0x86,
@@ -153,7 +169,14 @@ int tuxctl_set_led(struct tty_struct *tty, unsigned long argument){
 	return 0;
 }
 
-/**/
+/*
+ * tuxctl_buttons
+ *   DESCRIPTION: maps bits for the buttons
+ *   INPUTS: tux tty, argument
+ *   OUTPUTS: none
+ *   RETURN VALUE: 0 or -einval
+ *   SIDE EFFECTS: buttons for tux ready
+ */
 int tuxctl_buttons(struct tty_struct *tty, unsigned long argument){
 	if(!argument){
 		return -EINVAL;
