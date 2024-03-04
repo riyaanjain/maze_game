@@ -175,54 +175,54 @@ cmd_t get_command(dir_t cur_dir) {
 #endif
     }
 
-    if(USE_TUX_CONTROLLER == 1) /**/ //tux button test
-    {   
-        switch(tux_button_tester)
-        {
-            case 0x80: //right
-                pushed = DIR_RIGHT;
-                break;
+    // if(USE_TUX_CONTROLLER == 1) /**/ //tux button test
+    // {   
+    //     switch(tux_button_tester)
+    //     {
+    //         case 0x80: //right
+    //             pushed = DIR_RIGHT;
+    //             break;
 
-            case 0x40: //left
-                pushed  = DIR_LEFT;
-                break;
-            case 0x20: //down
-                pushed = DIR_DOWN;
-                break;
+    //         case 0x40: //left
+    //             pushed  = DIR_LEFT;
+    //             break;
+    //         case 0x20: //down
+    //             pushed = DIR_DOWN;
+    //             break;
 
-            case 0x10: // up
-                pushed = DIR_UP;
-                break;
+    //         case 0x10: // up
+    //             pushed = DIR_UP;
+    //             break;
 
-            case 0x08: //c
-                pushed = DIR_STOP;
-                prev_cur = DIR_STOP;
-                printf(" you pushed the C button\n");
-                break;
+    //         case 0x08: //c
+    //             pushed = DIR_STOP;
+    //             prev_cur = DIR_STOP;
+    //             printf(" you pushed the C button\n");
+    //             break;
 
-            case 0x04: //b
-                pushed = DIR_STOP;
-                prev_cur = DIR_STOP;
-                printf(" you pushed the B button\n");
-                break;
+    //         case 0x04: //b
+    //             pushed = DIR_STOP;
+    //             prev_cur = DIR_STOP;
+    //             printf(" you pushed the B button\n");
+    //             break;
 
-            case 0x02: //a
-                pushed = DIR_STOP;
-                prev_cur = DIR_STOP;
-                printf(" you pushed the A button\n");
-                break;
+    //         case 0x02: //a
+    //             pushed = DIR_STOP;
+    //             prev_cur = DIR_STOP;
+    //             printf(" you pushed the A button\n");
+    //             break;
 
-            case 0x01: //start
-                pushed = DIR_STOP;
-                prev_cur = DIR_STOP;
-                printf(" you pushed the S button\n");
-                break;
+    //         case 0x01: //start
+    //             pushed = DIR_STOP;
+    //             prev_cur = DIR_STOP;
+    //             printf(" you pushed the S button\n");
+    //             break;
 
-            default: 
-                pushed = DIR_STOP;
-                break;
-        }
-    }
+    //         default: 
+    //             pushed = DIR_STOP;
+    //             break;
+    //     }
+    // }
 
     /*
      * Once a direction is pushed, that command remains active
@@ -285,7 +285,11 @@ int main() {
     int ldisc_num = N_MOUSE;
     ioctl(fd, TIOCSETD, &ldisc_num);
     init_input();
-    ioctl(fd, TUX_INIT);
+    int val;
+    val=ioctl(fd, TUX_INIT);
+    while(1){
+        printf("%d", val);
+    }
     //ioctl(fd,MTCP_LED_SET,0x1101);
     ioctl(fd, TUX_SET_LED, 0x33333333);
     ioctl(fd, TUX_BUTTONS, &tux_button_tester);
@@ -293,10 +297,10 @@ int main() {
     while (1) {
         printf("CURRENT DIRECTION IS %s\n", dir_names[dir]);
 
-        if (ioctl(fd, TUX_BUTTONS, &tux_button_tester) != 0){   /**/
-            perror("TUX_BUTTONS ioctl failed");
-            break;
-        }
+        // if (ioctl(fd, TUX_BUTTONS, &tux_button_tester) != 0){   /**/
+        //     perror("TUX_BUTTONS ioctl failed");
+        //     break;
+        // }
 
         while ((cmd = get_command(dir)) == TURN_NONE);
         if (cmd == CMD_QUIT)
